@@ -1,0 +1,23 @@
+#!/usr/bin/ruby
+# Desc: This tool convert file variables to bash envinroment variables.
+
+ARGV.each do |file|
+	# CHECK
+	next if not File.file?(file)
+	file_type = IO.popen(["file", "-b", "--mime-type", "test.yml"], in: :close, err: :close).read.chomp
+	next if not file_type.match(/text\//)
+
+	# APP
+	vars = []
+	text = File.open(file).read
+	text.scan(/\$\w+/).each {|x| vars << { x.sub("$", "") => ENV[x.sub("$", "")]} }
+
+	puts "FILENAME: #{file}, VARS: #{vars}"
+
+	vars.uniq.each do |var|
+		next if not var.values.first
+		text.gsub!(/\$#{var.keys.first}\b/, var.values.first)
+	end
+
+	File.write(file, text)
+end
